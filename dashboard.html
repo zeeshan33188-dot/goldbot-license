@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gold Signal Bot — Admin Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
+
+  .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px 30px; border-bottom: 2px solid #FFD700; display: flex; align-items: center; gap: 15px; }
+  .header h1 { color: #FFD700; font-size: 22px; }
+  .header span { color: #888; font-size: 13px; }
+
+  .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+
+  .auth-box { background: #1a1a2e; border: 1px solid #333; border-radius: 12px; padding: 30px; max-width: 400px; margin: 80px auto; text-align: center; }
+  .auth-box h2 { color: #FFD700; margin-bottom: 20px; }
+  .auth-box input { width: 100%; padding: 12px; background: #0f1117; border: 1px solid #444; border-radius: 8px; color: #fff; font-size: 15px; margin-bottom: 15px; }
+  .auth-box button { width: 100%; padding: 12px; background: #FFD700; color: #000; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
+  .stat-card { background: #1a1a2e; border: 1px solid #333; border-radius: 10px; padding: 20px; text-align: center; }
+  .stat-card .num { font-size: 32px; font-weight: bold; color: #FFD700; }
+  .stat-card .label { color: #888; font-size: 13px; margin-top: 5px; }
+
+  .card { background: #1a1a2e; border: 1px solid #333; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+  .card h3 { color: #FFD700; margin-bottom: 20px; font-size: 16px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 12px; color: #888; }
+  .form-group input { padding: 10px 12px; background: #0f1117; border: 1px solid #444; border-radius: 8px; color: #fff; font-size: 14px; }
+
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.2s; }
+  .btn-gold { background: #FFD700; color: #000; }
+  .btn-gold:hover { background: #ffc800; }
+  .btn-red { background: #e53e3e; color: #fff; }
+  .btn-red:hover { background: #c53030; }
+  .btn-green { background: #38a169; color: #fff; }
+  .btn-green:hover { background: #2f855a; }
+  .btn-blue { background: #3182ce; color: #fff; }
+  .btn-blue:hover { background: #2b6cb0; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 12px; font-size: 12px; color: #888; border-bottom: 1px solid #333; text-transform: uppercase; }
+  td { padding: 12px; font-size: 13px; border-bottom: 1px solid #222; }
+  tr:hover td { background: #16213e; }
+
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+  .badge-green { background: #1a4a2e; color: #68d391; }
+  .badge-red { background: #4a1a1a; color: #fc8181; }
+  .badge-yellow { background: #4a3a1a; color: #f6e05e; }
+
+  .key-box { background: #0f1117; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #68d391; }
+
+  .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; display: none; }
+  .alert-success { background: #1a4a2e; color: #68d391; border: 1px solid #2f855a; }
+  .alert-error { background: #4a1a1a; color: #fc8181; border: 1px solid #c53030; }
+
+  .actions { display: flex; gap: 6px; }
+
+  #main { display: none; }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authBox">
+  <div class="auth-box">
+    <h1 style="font-size:30px; margin-bottom:5px;">🥇</h1>
+    <h2>Gold Signal Bot</h2>
+    <p style="color:#888; margin-bottom:25px; font-size:13px;">Admin Dashboard</p>
+    <input type="password" id="masterKey" placeholder="Master Key daalo..." onkeydown="if(event.key==='Enter') login()">
+    <button onclick="login()">Login →</button>
+    <p id="authError" style="color:#fc8181; font-size:13px; margin-top:10px; display:none;">Wrong key!</p>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div id="main">
+  <div class="header">
+    <div>
+      <h1>🥇 Gold Signal Bot — Admin</h1>
+      <span id="serverUrl"></span>
+    </div>
+    <button class="btn btn-gold" style="margin-left:auto;" onclick="loadLicenses()">🔄 Refresh</button>
+  </div>
+
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="num" id="totalCount">0</div>
+        <div class="label">Total Clients</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="activeCount" style="color:#68d391;">0</div>
+        <div class="label">Active</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="expiredCount" style="color:#fc8181;">0</div>
+        <div class="label">Expired / Blocked</div>
+      </div>
+    </div>
+
+    <!-- Add Client -->
+    <div class="card">
+      <h3>➕ Naya Client Add Karo</h3>
+      <div id="addAlert" class="alert"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>MT5 Login ID</label>
+          <input type="text" id="newLogin" placeholder="12345678">
+        </div>
+        <div class="form-group">
+          <label>Client Name</label>
+          <input type="text" id="newName" placeholder="Ahmed Khan">
+        </div>
+        <div class="form-group">
+          <label>Days</label>
+          <input type="number" id="newDays" value="30" min="1">
+        </div>
+        <button class="btn btn-gold" onclick="addLicense()">Add Client</button>
+      </div>
+
+      <!-- Result box -->
+      <div id="newLicenseResult" style="display:none; margin-top:15px; background:#0f1117; border:1px solid #2f855a; border-radius:8px; padding:15px;">
+        <p style="color:#68d391; font-weight:bold; margin-bottom:10px;">✅ License Created!</p>
+        <table style="width:auto;">
+          <tr><td style="color:#888; padding:4px 15px 4px 0;">MT5 Login:</td><td id="res_login" style="color:#fff;"></td></tr>
+          <tr><td style="color:#888; padding:4px 15px 4px 0;">License Key:</td><td><span id="res_key" class="key-box"></span></td></tr>
+          <tr><td style="color:#888; padding:4px 15px 4px 0;">Expiry:</td><td id="res_expiry" style="color:#f6e05e;"></td></tr>
+        </table>
+        <p style="color:#888; font-size:12px; margin-top:10px;">⬆️ Yeh details client ko bhejo</p>
+      </div>
+    </div>
+
+    <!-- Licenses Table -->
+    <div class="card">
+      <h3>📋 All Clients</h3>
+      <div id="tableAlert" class="alert"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>MT5 Login</th>
+            <th>Name</th>
+            <th>License Key</th>
+            <th>Expiry</th>
+            <th>Days Left</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="licenseTable">
+          <tr><td colspan="7" style="text-align:center; color:#888; padding:30px;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const SERVER = "https://goldbot-license.onrender.com";
+  let MASTER_KEY = "";
+
+  function login() {
+    MASTER_KEY = document.getElementById("masterKey").value;
+    fetch(SERVER + "/admin/list", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({master_key: MASTER_KEY})
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById("authBox").style.display = "none";
+        document.getElementById("main").style.display = "block";
+        document.getElementById("serverUrl").textContent = SERVER;
+        renderTable(data.licenses);
+        updateStats(data.licenses);
+      } else {
+        document.getElementById("authError").style.display = "block";
+      }
+    })
+    .catch(() => {
+      document.getElementById("authError").textContent = "Server se connect nahi hua!";
+      document.getElementById("authError").style.display = "block";
+    });
+  }
+
+  function loadLicenses() {
+    fetch(SERVER + "/admin/list", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({master_key: MASTER_KEY})
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        renderTable(data.licenses);
+        updateStats(data.licenses);
+      }
+    });
+  }
+
+  function updateStats(licenses) {
+    const total   = licenses.length;
+    const active  = licenses.filter(l => l.active && l.days_left > 0).length;
+    const expired = total - active;
+    document.getElementById("totalCount").textContent   = total;
+    document.getElementById("activeCount").textContent  = active;
+    document.getElementById("expiredCount").textContent = expired;
+  }
+
+  function renderTable(licenses) {
+    const tbody = document.getElementById("licenseTable");
+    if (!licenses.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#888; padding:30px;">Koi client nahi hai abhi</td></tr>';
+      return;
+    }
+    tbody.innerHTML = licenses.map(l => {
+      const isActive = l.active && l.days_left > 0;
+      const badge    = isActive
+        ? '<span class="badge badge-green">✅ Active</span>'
+        : l.days_left <= 0
+          ? '<span class="badge badge-red">❌ Expired</span>'
+          : '<span class="badge badge-red">🚫 Blocked</span>';
+      const daysColor = l.days_left <= 5 ? '#fc8181' : l.days_left <= 10 ? '#f6e05e' : '#68d391';
+      return `
+        <tr>
+          <td><strong>${l.mt5_login}</strong></td>
+          <td>${l.name}</td>
+          <td><span class="key-box">${l.key}</span></td>
+          <td>${l.expiry}</td>
+          <td style="color:${daysColor}; font-weight:bold;">${l.days_left}d</td>
+          <td>${badge}</td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-blue btn-sm" onclick="extendLicense('${l.mt5_login}', 30)">+30d</button>
+              ${l.active
+                ? `<button class="btn btn-red btn-sm" onclick="blockLicense('${l.mt5_login}')">Block</button>`
+                : `<button class="btn btn-green btn-sm" onclick="unblockLicense('${l.mt5_login}')">Unblock</button>`
+              }
+            </div>
+          </td>
+        </tr>`;
+    }).join("");
+  }
+
+  function addLicense() {
+    const login = document.getElementById("newLogin").value.trim();
+    const name  = document.getElementById("newName").value.trim();
+    const days  = parseInt(document.getElementById("newDays").value);
+
+    if (!login || !name) {
+      showAlert("addAlert", "MT5 Login aur Name zaroori hai!", "error");
+      return;
+    }
+
+    fetch(SERVER + "/admin/add", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({master_key: MASTER_KEY, mt5_login: login, name, days})
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById("res_login").textContent  = data.mt5_login;
+        document.getElementById("res_key").textContent    = data.key;
+        document.getElementById("res_expiry").textContent = data.expiry;
+        document.getElementById("newLicenseResult").style.display = "block";
+        document.getElementById("newLogin").value = "";
+        document.getElementById("newName").value  = "";
+        loadLicenses();
+      } else {
+        showAlert("addAlert", data.msg, "error");
+      }
+    });
+  }
+
+  function extendLicense(login, days) {
+    fetch(SERVER + "/admin/extend", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({master_key: MASTER_KEY, mt5_login: login, days})
+    })
+    .then(r => r.json())
+    .then(data => {
+      showAlert("tableAlert", data.msg, data.success ? "success" : "error");
+      if (data.success) loadLicenses();
+    });
+  }
+
+  function blockLicense(login) {
+    if (!confirm(`${login} ko block karna chahte hain?`)) return;
+    fetch(SERVER + "/admin/block", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({master_key: MASTER_KEY, mt5_login: login})
+    })
+    .then(r => r.json())
+    .then(data => {
+      showAlert("tableAlert", data.msg, data.success ? "success" : "error");
+      if (data.success) loadLicenses();
+    });
+  }
+
+  function unblockLicense(login) {
+    fetch(SERVER + "/admin/unblock", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({master_key: MASTER_KEY, mt5_login: login})
+    })
+    .then(r => r.json())
+    .then(data => {
+      showAlert("tableAlert", data.msg, data.success ? "success" : "error");
+      if (data.success) loadLicenses();
+    });
+  }
+
+  function showAlert(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent  = msg;
+    el.className    = `alert alert-${type}`;
+    el.style.display = "block";
+    setTimeout(() => el.style.display = "none", 4000);
+  }
+</script>
+</body>
+</html>
